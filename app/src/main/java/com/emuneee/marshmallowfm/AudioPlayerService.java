@@ -16,6 +16,9 @@ import android.net.Uri;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.Log;
+
+import androidx.annotation.NonNull;
 
 import java.io.IOException;
 
@@ -49,14 +52,21 @@ public class AudioPlayerService extends Service implements MediaPlayer.OnPrepare
     private MediaSession.Callback mMediaSessionCallback = new MediaSession.Callback() {
 
         @Override
+        public boolean onMediaButtonEvent(@NonNull Intent mediaButtonIntent) {
+            Log.e("marshmallowfm-service", "onMediaButtonEvent " + Log.getStackTraceString(new Throwable()));
+            return super.onMediaButtonEvent(mediaButtonIntent);
+        }
+
+        @Override
         public void onPlayFromSearch(String query, Bundle extras) {
             Uri uri = extras.getParcelable(PARAM_TRACK_URI);
+            Log.e("marshmallowfm-service", "onPlayFromSearch " + uri);
             onPlayFromUri(uri, null);
         }
 
         @Override
         public void onPlayFromUri(Uri uri, Bundle extras) {
-
+            Log.e("marshmallowfm-service", "onPlayFromUri " + uri + " state " + mPlaybackState.getState());
             try {
                 switch (mPlaybackState.getState()) {
                     case PlaybackState.STATE_PLAYING:
@@ -99,6 +109,7 @@ public class AudioPlayerService extends Service implements MediaPlayer.OnPrepare
 
         @Override
         public void onPlay() {
+            Log.e("marshmallowfm-service", "onPlay  state " + mPlaybackState.getState());
             switch (mPlaybackState.getState()) {
                 case PlaybackState.STATE_PAUSED:
                     mMediaPlayer.start();
@@ -114,6 +125,7 @@ public class AudioPlayerService extends Service implements MediaPlayer.OnPrepare
 
         @Override
         public void onPause() {
+            Log.e("marshmallowfm-service", "onPause  state " + mPlaybackState.getState());
             switch (mPlaybackState.getState()) {
                 case PlaybackState.STATE_PLAYING:
                     mMediaPlayer.pause();
@@ -129,6 +141,7 @@ public class AudioPlayerService extends Service implements MediaPlayer.OnPrepare
 
         @Override
         public void onRewind() {
+            Log.e("marshmallowfm-service", "onRewind  state " + mPlaybackState.getState());
             switch (mPlaybackState.getState()) {
                 case PlaybackState.STATE_PLAYING:
                     mMediaPlayer.seekTo(mMediaPlayer.getCurrentPosition() - 10000);
@@ -139,6 +152,7 @@ public class AudioPlayerService extends Service implements MediaPlayer.OnPrepare
 
         @Override
         public void onFastForward() {
+            Log.e("marshmallowfm-service", "onFastForward  state " + mPlaybackState.getState());
             switch (mPlaybackState.getState()) {
                 case PlaybackState.STATE_PLAYING:
                     mMediaPlayer.seekTo(mMediaPlayer.getCurrentPosition() + 10000);
@@ -152,11 +166,13 @@ public class AudioPlayerService extends Service implements MediaPlayer.OnPrepare
     }
 
     public MediaSession.Token getMediaSessionToken() {
+        Log.e("marshmallowfm-service", "getMediaSessionToken");
         return mMediaSession.getSessionToken();
     }
 
     @Override
     public void onPrepared(MediaPlayer mp) {
+        Log.e("marshmallowfm-service", "onPrepared ");
         mMediaPlayer.start();
         mPlaybackState = new PlaybackState.Builder()
                 .setState(PlaybackState.STATE_PLAYING, 0, 1.0f)
@@ -167,11 +183,12 @@ public class AudioPlayerService extends Service implements MediaPlayer.OnPrepare
 
     @Override
     public void onBufferingUpdate(MediaPlayer mp, int percent) {
-
+        Log.e("marshmallowfm-service", "onBufferingUpdate ");
     }
 
     @Override
     public void onCompletion(MediaPlayer mp) {
+        Log.e("marshmallowfm-service", "onCompletion ");
         mPlaybackState = new PlaybackState.Builder()
                 .setState(PlaybackState.STATE_NONE, 0, 1.0f)
                 .build();
@@ -216,13 +233,14 @@ public class AudioPlayerService extends Service implements MediaPlayer.OnPrepare
     @Override
     public void onDestroy() {
         super.onDestroy();
+        Log.e("marshmallowfm-service", "onDestroy ");
         mMediaPlayer.release();
         mMediaSession.release();
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-
+        Log.e("marshmallowfm-service", "onStartCommand action " + intent.getAction());
         if (intent != null && intent.getAction() != null) {
 
             switch (intent.getAction()) {
@@ -245,6 +263,7 @@ public class AudioPlayerService extends Service implements MediaPlayer.OnPrepare
     }
 
     private Notification.Action createAction(int iconResId, String title, String action) {
+        Log.e("marshmallowfm-service", "createAction title " + title);
         Intent intent = new Intent(this, AudioPlayerService.class);
         intent.setAction(action);
         PendingIntent pendingIntent = PendingIntent.getService(getApplicationContext(), 1, intent, 0);
@@ -252,7 +271,7 @@ public class AudioPlayerService extends Service implements MediaPlayer.OnPrepare
     }
 
     private void updateNotification() {
-
+        Log.e("marshmallowfm-service", "updateNotification");
         Notification.Action playPauseAction = mPlaybackState.getState() == PlaybackState.STATE_PLAYING ?
                 createAction(R.drawable.ic_action_pause, "Pause", ACTION_PAUSE) :
                 createAction(R.drawable.ic_action_play, "Play", ACTION_PLAY);
